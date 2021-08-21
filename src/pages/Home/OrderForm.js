@@ -40,7 +40,7 @@ const OrderForm = ({ onHide, order }) => {
     >
       <Modal.Header closeButton>
         <Modal.Title id="contained-modal-title-vcenter">
-          {order?.id ? "Edit" : "Add"} order
+          {order?.Order_ID ? `Edit Order (${order.Order_ID})` : "Add Order"}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
@@ -84,9 +84,10 @@ const OrderForm = ({ onHide, order }) => {
           <Form.Group className="mb-3" controlId="formBasicCrust">
             <Form.Label>Crust</Form.Label>
             <Form.Control
-              type="text"
+              type="number"
               placeholder="Enter table number"
               required
+              min={1}
               value={tableNo}
               onChange={(e) => {
                 setTableNo(e.target.value);
