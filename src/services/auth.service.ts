@@ -1,6 +1,6 @@
 // import customAxios from "./customAxios";
 
-const login = (username, password) => {
+const login = (username: string, password: string) => {
   if (username === "test" && password === "test") {
     return {
       status: 201,
@@ -19,6 +19,8 @@ const login = (username, password) => {
   //   });
 };
 
-export default {
+const authService = {
   login,
 };
+
+export default authService;

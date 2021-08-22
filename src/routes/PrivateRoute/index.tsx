@@ -1,9 +1,16 @@
 import React from "react";
-import { Route, Redirect } from "react-router-dom";
+import { Route, Redirect, RouteProps } from "react-router-dom";
 import { TopNavBar } from "../../components/TopNavBar";
 import { useAuthState } from "../../context/context";
 
-const PrivateRoute = ({ component: RouteComponent, ...rest }) => {
+export interface ProtectedRouteProps extends RouteProps {
+  isAuthenticated: boolean;
+  isAllowed: boolean;
+  restrictedPath: string;
+}
+
+export default function PrivateRoute(props: any) {
+  const { component: RouteComponent, ...rest } = props;
   const { user, token } = useAuthState();
 
   return (
@@ -21,6 +28,4 @@ const PrivateRoute = ({ component: RouteComponent, ...rest }) => {
       }
     />
   );
-};
-
-export default PrivateRoute;
+}

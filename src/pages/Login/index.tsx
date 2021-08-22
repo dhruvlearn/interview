@@ -1,25 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { Form, Button, Spinner } from "react-bootstrap";
+import { Form, Button, Toast, ToastContainer, Spinner } from "react-bootstrap";
 import authService from "../../services/auth.service";
 import { useHistory } from "react-router-dom";
 import { useAuthDispatch, useAuthState } from "../../context/context";
+import { setUser } from "../../context/actions";
 
 export default function Login() {
   const history = useHistory();
-  const dispatch = useAuthDispatch();
+  const dispatch: any = useAuthDispatch();
   const { user, token } = useAuthState();
-  const [validated, setValidated] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [username, setUsername] = useState(false);
-  const [password, setPassword] = useState(false);
+  const [validated, setValidated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [username, setUsername] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
 
   useEffect(() => {
     if (user && token) {
       history.replace("/home");
     }
+    // eslint-disable-next-line
   }, []);
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     event.stopPropagation();
     const form = event.currentTarget;
@@ -27,15 +29,14 @@ export default function Login() {
     setValidated(true);
     if (isValidForm) {
       setIsLoading(true);
-      const response = await authService.login(username, password);
+      const response = authService.login(username, password);
       if (response.status === 201 && response.access_token) {
-        dispatch({
-          type: "SET_USER",
-          payload: {
+        dispatch(
+          setUser({
             user: username,
             token: response.access_token,
-          },
-        });
+          })
+        );
         history.replace("/home");
       }
       setIsLoading(false);
@@ -45,7 +46,7 @@ export default function Login() {
   return (
     <div className="d-flex justify-content-center align-items-center h-100 v-100">
       <Form noValidate validated={validated} onSubmit={handleSubmit}>
-        <Form.Group className="mb-3" controlId="formBasicEmail" value>
+        <Form.Group className="mb-3 required" controlId="formBasicEmail">
           <Form.Label>Username</Form.Label>
           <Form.Control
             type="text"
@@ -57,11 +58,11 @@ export default function Login() {
             }}
           />
         </Form.Group>
-        <Form.Group className="mb-3" controlId="formBasicPassword">
+        <Form.Group className="mb-3 required" controlId="formBasicPassword">
           <Form.Label>Password</Form.Label>
           <Form.Control
             type="password"
-            placeholder="Password"
+            placeholder="Enter password"
             required
             value={password}
             onChange={(e) => {
@@ -77,7 +78,7 @@ export default function Login() {
               size={"sm"}
             />
           ) : (
-            "Submit"
+            "Login"
           )}
         </Button>
       </Form>

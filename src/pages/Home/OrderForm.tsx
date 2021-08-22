@@ -1,16 +1,22 @@
 import React, { useState } from "react";
 import { Form, Button, Spinner, Modal } from "react-bootstrap";
 import orderService from "../../services/order.service";
+import { Order } from "../../types/types";
 
-const OrderForm = ({ onHide, order }) => {
-  const [validated, setValidated] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [crust, setCrust] = useState(order?.Crust || "");
-  const [flavor, setFlavor] = useState(order?.Flavor || "");
-  const [size, setSize] = useState(order?.Size || "");
-  const [tableNo, setTableNo] = useState(order?.Table_No || "");
+type Props = {
+  onHide: () => void;
+  order?: Order;
+};
 
-  const handleSubmit = async (event) => {
+const OrderForm = ({ onHide, order }: Props) => {
+  const [validated, setValidated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [crust, setCrust] = useState<string>(order?.Crust || "");
+  const [flavor, setFlavor] = useState<string>(order?.Flavor || "");
+  const [size, setSize] = useState<string>(order?.Size || "");
+  const [tableNo, setTableNo] = useState<number>(order?.Table_No || 0);
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     event.stopPropagation();
     const form = event.currentTarget;
@@ -19,14 +25,16 @@ const OrderForm = ({ onHide, order }) => {
     if (isValidForm) {
       setIsLoading(true);
       const response = orderService.addOrder({
-        Order_ID: order?.Order_ID || "",
+        Order_ID: order?.Order_ID || 0,
         Crust: crust,
         Flavor: flavor,
         Size: size,
         Table_No: tableNo,
       });
       setIsLoading(false);
-      onHide();
+      if (response.status === 201 || response.status === 200) {
+        onHide();
+      }
     }
   };
 
@@ -45,52 +53,55 @@ const OrderForm = ({ onHide, order }) => {
       </Modal.Header>
       <Modal.Body>
         <Form noValidate validated={validated} onSubmit={handleSubmit}>
-          <Form.Group className="mb-3" controlId="formBasicCrust">
+          <Form.Group className="mb-3 required" controlId="formBasicCrust">
             <Form.Label>Crust</Form.Label>
             <Form.Control
               type="text"
               placeholder="Enter crust"
               required
               value={crust}
-              onChange={(e) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setCrust(e.target.value);
               }}
             />
           </Form.Group>
-          <Form.Group className="mb-3" controlId="formBasicCrust">
-            <Form.Label>flavor</Form.Label>
+          <Form.Group className="mb-3 required" controlId="formBasicFlavor">
+            <Form.Label>Flavor</Form.Label>
             <Form.Control
               type="text"
               placeholder="Enter flavor"
               required
               value={flavor}
-              onChange={(e) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setFlavor(e.target.value);
               }}
             />
           </Form.Group>
-          <Form.Group className="mb-3" controlId="formBasicCrust">
+          <Form.Group className="mb-3 required" controlId="formBasicSize">
             <Form.Label>Size</Form.Label>
             <Form.Control
               type="text"
               placeholder="Enter size"
               required
               value={size}
-              onChange={(e) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setSize(e.target.value);
               }}
             />
           </Form.Group>
-          <Form.Group className="mb-3" controlId="formBasicCrust">
-            <Form.Label>Crust</Form.Label>
+          <Form.Group
+            className="mb-3 required"
+            controlId="formBasicTableNumber"
+          >
+            <Form.Label>Table number</Form.Label>
             <Form.Control
               type="number"
               placeholder="Enter table number"
               required
               min={1}
               value={tableNo}
-              onChange={(e) => {
-                setTableNo(e.target.value);
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setTableNo(Number(e.target.value));
               }}
             />
           </Form.Group>
@@ -101,12 +112,14 @@ const OrderForm = ({ onHide, order }) => {
                 className="d-flex justify-content-center align-self-center"
                 size={"sm"}
               />
+            ) : order?.Order_ID ? (
+              `Edit`
             ) : (
-              "Submit"
+              "Add"
             )}
           </Button>
           <Button variant="secondary" onClick={onHide} className="ms-2">
-            Close
+            Cancel
           </Button>
         </Form>
       </Modal.Body>

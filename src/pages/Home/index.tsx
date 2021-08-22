@@ -8,13 +8,15 @@ import {
   Spinner,
 } from "react-bootstrap";
 import orderService from "../../services/order.service";
+import { Order } from "../../types/types";
 import OrderForm from "./OrderForm";
+import { PencilFill, PlusCircleFill, TrashFill } from "react-bootstrap-icons";
 
 const Home = () => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [editOrder, setEditOrder] = useState();
-  const [deleteOrderId, setDeleteOrderId] = useState();
+  const [orders, setOrders] = useState<any>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [editOrder, setEditOrder] = useState<any>();
+  const [deleteOrderId, setDeleteOrderId] = useState<number | undefined>();
 
   const getOrders = async () => {
     setLoading(true);
@@ -29,15 +31,17 @@ const Home = () => {
     getOrders();
   }, []);
 
-  const onAddClick = (data = {}) => {
+  const onAddClick = (data: Order | {} = {}) => {
     setEditOrder(data);
   };
 
   const deletOrder = () => {
-    const response = orderService.deleteOrder(deleteOrderId);
-    if (response.status === 200) {
-      setDeleteOrderId();
-      getOrders();
+    if (deleteOrderId) {
+      const response = orderService.deleteOrder(deleteOrderId);
+      if (response.status === 200) {
+        setDeleteOrderId(undefined);
+        getOrders();
+      }
     }
   };
 
@@ -45,7 +49,9 @@ const Home = () => {
     <Container className="d-flex mt-4 flex-column">
       <div className="d-flex mb-4 mt-4  justify-content-between">
         <h2>Orders</h2>
-        <Button onClick={() => onAddClick({})}>Add</Button>
+        <Button onClick={() => onAddClick({})}>
+          <PlusCircleFill color="white" />
+        </Button>
       </div>
       <Table striped bordered hover>
         <thead>
@@ -59,7 +65,7 @@ const Home = () => {
         </thead>
         <tbody>
           {!loading && orders.length ? (
-            orders.map((order) => {
+            orders.map((order: Order) => {
               return (
                 <tr key={`${order.Order_ID}`}>
                   <td>{order.Crust}</td>
@@ -75,12 +81,13 @@ const Home = () => {
                         <Popover id={`popover-basic-${order.Order_ID}`}>
                           <Popover.Header as="h3">Are you sure?</Popover.Header>
                           <Popover.Body>
+                            <p>You want to delete this order?</p>
                             <Button variant="danger" onClick={deletOrder}>
                               Delete
                             </Button>
                             <Button
                               variant="secondary"
-                              onClick={setDeleteOrderId}
+                              onClick={() => setDeleteOrderId(undefined)}
                               className="ms-2"
                             >
                               Cancel
@@ -93,7 +100,7 @@ const Home = () => {
                         variant="danger"
                         onClick={() => setDeleteOrderId(order.Order_ID)}
                       >
-                        Delete
+                        <TrashFill color="white" />
                       </Button>
                     </OverlayTrigger>
                     <Button
@@ -101,7 +108,7 @@ const Home = () => {
                       className="ms-2"
                       onClick={() => onAddClick(order)}
                     >
-                      Edit
+                      <PencilFill color="white" />
                     </Button>
                   </td>
                 </tr>
@@ -109,7 +116,7 @@ const Home = () => {
             })
           ) : (
             <tr>
-              <td colspan="5" className="text-center">
+              <td colSpan={5} className="text-center">
                 {loading ? (
                   <Spinner
                     animation="border"
@@ -128,7 +135,7 @@ const Home = () => {
         <OrderForm
           order={editOrder}
           onHide={() => {
-            setEditOrder();
+            setEditOrder(undefined);
             getOrders();
           }}
         />
