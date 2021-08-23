@@ -5,7 +5,7 @@ import { Order } from "../../types/types";
 
 type Props = {
   onHide: () => void;
-  order?: Order;
+  order: Order | any;
 };
 
 const OrderForm = ({ onHide, order }: Props) => {
@@ -48,7 +48,9 @@ const OrderForm = ({ onHide, order }: Props) => {
     >
       <Modal.Header closeButton>
         <Modal.Title id="contained-modal-title-vcenter">
-          {order?.Order_ID ? `Edit Order (${order.Order_ID})` : "Add Order"}
+          {order?.Order_ID
+            ? `Update Order (${order.Order_ID})`
+            : "Create Order"}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
@@ -113,9 +115,9 @@ const OrderForm = ({ onHide, order }: Props) => {
                 size={"sm"}
               />
             ) : order?.Order_ID ? (
-              `Edit`
+              `Update`
             ) : (
-              "Add"
+              "Create"
             )}
           </Button>
           <Button variant="secondary" onClick={onHide} className="ms-2">

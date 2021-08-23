@@ -6,18 +6,29 @@ import {
   OverlayTrigger,
   Popover,
   Spinner,
+  Form,
+  Tooltip,
 } from "react-bootstrap";
 import orderService from "../../services/order.service";
 import { Order } from "../../types/types";
 import OrderForm from "./OrderForm";
-import { PencilFill, PlusCircleFill, TrashFill } from "react-bootstrap-icons";
+import {
+  PencilFill,
+  PlusCircleFill,
+  TrashFill,
+  FilePdfFill,
+} from "react-bootstrap-icons";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 const Home = () => {
-  const [orders, setOrders] = useState<any>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [editOrder, setEditOrder] = useState<any>();
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
+  const [editOrder, setEditOrder] = useState<Order | {}>();
   const [deleteOrderId, setDeleteOrderId] = useState<number | undefined>();
-
+  const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
+  const isAllSelected = orders.length === selectedOrders.length;
   const getOrders = async () => {
     setLoading(true);
     const response = orderService.getOrders();
@@ -30,9 +41,48 @@ const Home = () => {
   useEffect(() => {
     getOrders();
   }, []);
+  useEffect(() => {
+    if (isDownloading) {
+      const input: HTMLElement | null = document.getElementById("divToPrint");
+      if (input) {
+        html2canvas(input).then((canvas) => {
+          console.log("deo");
+          let imgWidth = 208;
+          let imgHeight = (canvas.height * imgWidth) / canvas.width;
+          const imgData = canvas.toDataURL("img/png");
+          const pdf = new jsPDF("p", "mm", "a4");
+          pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+          // pdf.output('dataurlnewwindow');
+          pdf.save(`orders_${new Date().getTime()}.pdf`);
+          setIsDownloading(false);
+        });
+      }
+    }
+  }, [isDownloading]);
 
   const onAddClick = (data: Order | {} = {}) => {
     setEditOrder(data);
+  };
+
+  const downloadPdf = () => {
+    console.log("downloadPdf");
+    setIsDownloading(true);
+  };
+
+  const checkboxClick = (orderId?: number) => {
+    if (orderId) {
+      if (!selectedOrders.includes(orderId)) {
+        setSelectedOrders([...selectedOrders, orderId]);
+      } else {
+        const newSelectedOrders = selectedOrders.filter((id) => id !== orderId);
+        setSelectedOrders(newSelectedOrders);
+      }
+    } else if (isAllSelected) {
+      setSelectedOrders([]);
+    } else {
+      const newSelectedOrders = orders.map((order: Order) => order.Order_ID);
+      setSelectedOrders(newSelectedOrders);
+    }
   };
 
   const deletOrder = () => {
@@ -45,17 +95,96 @@ const Home = () => {
     }
   };
 
+  const renderTooltip = ({
+    buttonComponent,
+    tooltip,
+  }: {
+    buttonComponent: React.ReactElement;
+    tooltip: string;
+  }) => {
+    return (
+      <OverlayTrigger
+        placement="top"
+        overlay={<Tooltip id="button-tooltip">{tooltip}</Tooltip>}
+      >
+        {buttonComponent}
+      </OverlayTrigger>
+    );
+  };
+
+  const renderPdfGenerator = () => {
+    return (
+      <div style={{ opacity: 0 }}>
+        <div id="divToPrint" className="m-3 mt4">
+          <h2 className="m2 text-center">Orders</h2>
+          <Table bordered>
+            <thead>
+              <tr>
+                <th>Crust</th>
+                <th>Flavor</th>
+                <th>Size</th>
+                <th>Table No</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((order: Order) => {
+                if (!selectedOrders.includes(order.Order_ID)) {
+                  return null;
+                }
+                return (
+                  <tr key={`${order.Order_ID}`}>
+                    <td>{order.Crust}</td>
+                    <td>{order.Flavor}</td>
+                    <td>{order.Size}</td>
+                    <td>{order.Table_No}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </Table>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Container className="d-flex mt-4 flex-column">
       <div className="d-flex mb-4 mt-4  justify-content-between">
         <h2>Orders</h2>
-        <Button onClick={() => onAddClick({})}>
-          <PlusCircleFill color="white" />
-        </Button>
+        <div>
+          {renderTooltip({
+            tooltip: "Generat & Download PDF",
+            buttonComponent: (
+              <Button
+                className="me-3"
+                onClick={downloadPdf}
+                disabled={!selectedOrders?.length}
+              >
+                <FilePdfFill color="white" />
+              </Button>
+            ),
+          })}
+          {renderTooltip({
+            tooltip: "Create Order",
+            buttonComponent: (
+              <Button className="me-3" onClick={() => onAddClick()}>
+                <PlusCircleFill color="white" />
+              </Button>
+            ),
+          })}
+        </div>
       </div>
       <Table striped bordered hover>
         <thead>
           <tr>
+            <th>
+              <Form.Check
+                readOnly={true}
+                checked={isAllSelected}
+                onClick={() => checkboxClick()}
+                type="checkbox"
+              />
+            </th>
             <th>Crust</th>
             <th>Flavor</th>
             <th>Size</th>
@@ -68,6 +197,14 @@ const Home = () => {
             orders.map((order: Order) => {
               return (
                 <tr key={`${order.Order_ID}`}>
+                  <td>
+                    <Form.Check
+                      readOnly={true}
+                      checked={selectedOrders.includes(order.Order_ID)}
+                      onClick={() => checkboxClick(order.Order_ID)}
+                      type="checkbox"
+                    />
+                  </td>
                   <td>{order.Crust}</td>
                   <td>{order.Flavor}</td>
                   <td>{order.Size}</td>
@@ -133,13 +270,14 @@ const Home = () => {
       </Table>
       {!!editOrder && (
         <OrderForm
-          order={editOrder}
+          order={editOrder ?? {}}
           onHide={() => {
             setEditOrder(undefined);
             getOrders();
           }}
         />
       )}
+      {isDownloading && renderPdfGenerator()}
     </Container>
   );
 };
